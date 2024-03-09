@@ -1,5 +1,5 @@
 @extends('layouts.app')
-
+<h1>Estas en la sesión de citas médicas</h1>
 @section('content')
 <div class="container">
     <div class="row justify-content-center">
@@ -13,7 +13,7 @@
                             {{ session('status') }}
                         </div>
                     @endif
-
+                    
                     {{ __('You are logged in!') }}
                 </div>
             </div>
