@@ -28,4 +28,23 @@ Route::middleware(['auth','admin'])->group(function (){
     Route::resource('pacientes', 'App\Http\Controllers\admin\PatientController');
 });
 
+Route::middleware(['auth','doctor'])->group(function (){
+    Route::get('/horario', [App\Http\Controllers\doctor\HorarioController::class, 'edit']);
+    Route::post('/horario', [App\Http\Controllers\doctor\HorarioController::class, 'store']);
+
+});
+
+
+Route::middleware('auth')->group(function(){
+    
+    Route::get('/reservarcitas/create', [App\Http\Controllers\AppointmentController::class, 'create']);
+    Route::post('/reservarcitas', [App\Http\Controllers\AppointmentController::class, 'store']);
+    Route::get('/miscitas', [App\Http\Controllers\AppointmentController::class, 'index']);
+
+    //JSON
+    Route::get('/especialidades/{specialty}/medicos', [App\Http\Controllers\Api\SpecialtyController::class, 'doctors']);
+    Route::get('/horario/horas', [App\Http\Controllers\Api\HorarioController::class, 'hours']);
+
+});
+
 

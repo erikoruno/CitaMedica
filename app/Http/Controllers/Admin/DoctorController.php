@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Http\Controllers\Controller;
+use App\Models\Specialty;
 
 class DoctorController extends Controller
 {
@@ -18,11 +19,15 @@ class DoctorController extends Controller
     
     public function create()
     {
-        return view('doctors.create');
+        $specialties = Specialty::all();
+        return view('doctors.create', compact('specialties'));
     }
 
     public function store(Request $request)
     {   
+        
+        
+
         $rules = [
             'name' => 'required|min:3',
             'email' => 'required|email',
@@ -44,7 +49,7 @@ class DoctorController extends Controller
 
         $this->validate($request,$rules,$messages);
 
-        User::create(
+       $user =  User::create(
             $request->only('name','email','cedula','address','phone')
             + [
                 'role' => 'doctor',
@@ -52,6 +57,8 @@ class DoctorController extends Controller
 
             ]
         );
+        $user->specialties()->attach($request->input('specialties'));
+
         $notification = 'El médico se ha registrado correctamente.';
         return redirect('/medicos')->with(compact('notification'));
     }
@@ -71,7 +78,11 @@ class DoctorController extends Controller
     public function edit($id)
     {
         $doctor = User::doctors()->findOrFail($id);
-        return view('doctors.edit', compact('doctor')); 
+
+        $specialties = Specialty::all();
+        $specialty_ids = $doctor->specialties()->pluck('specialties.id');
+
+        return view('doctors.edit', compact('doctor', 'specialties', 'specialty_ids')); 
     }
 
   
@@ -107,6 +118,7 @@ class DoctorController extends Controller
 
         $user->fill($data);
         $user->save();
+        $user->specialties()->sync($request->input('specialties'));
         
         $notification = 'La información del médico se actualizó correctamente.';
         return redirect('/medicos')->with(compact('notification'));

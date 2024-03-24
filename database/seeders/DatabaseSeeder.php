@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\Horarios;
+use App\Models\Specialty;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -15,5 +17,7 @@ class DatabaseSeeder extends Seeder
     {
         // \App\Models\User::factory(10)->create();
         $this->call(UsersTableSeeder::class);
+        $this->call(SpecialtiesTableSeeder::class);
+        $this->call(HorariosTableSeeder::class);
     }
 }
