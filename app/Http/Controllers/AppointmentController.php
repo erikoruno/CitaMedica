@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Interfaces\HorarioServiceInterface;
 use App\Models\Appointment;
+use App\Models\CancelledAppointment;
 use App\Models\Specialty;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -13,18 +14,49 @@ class AppointmentController extends Controller
 {
     
     public function index(){
-        $confirmedAppointments = Appointment::all()
+
+        $role = auth()->user()->role;
+
+        if($role == 'admin'){
+            //Admin
+            $confirmedAppointments = Appointment::all()
+            ->where('status', 'Confirmada');
+            $pendingAppointments = Appointment::all()
+            ->where('status', 'Reservada');
+            $oldAppointments = Appointment::all()
+            ->whereIn('status', ['Atendida', 'Cancelada']);
+        }else if($role == 'doctor'){
+            //Doctor
+            $confirmedAppointments = Appointment::all()
+            ->where('status', 'Confirmada')
+            ->where('doctor_id', auth()->id());
+
+            $pendingAppointments = Appointment::all()
+            ->where('status', 'Reservada')
+            ->where('doctor_id', auth()->id());
+
+            $oldAppointments = Appointment::all()
+            ->whereIn('status', ['Atendida', 'Cancelada'])
+            ->where('doctor_id', auth()->id());
+
+        }elseif($role == 'paciente'){
+            //Pacientes
+            $confirmedAppointments = Appointment::all()
             ->where('status', 'Confirmada')
             ->where('patient_id', auth()->id());
 
-        $pendingAppointments = Appointment::all()
+            $pendingAppointments = Appointment::all()
             ->where('status', 'Reservada')
             ->where('patient_id', auth()->id());
 
-        $oldAppointments = Appointment::all()
+            $oldAppointments = Appointment::all()
             ->whereIn('status', ['Atendida', 'Cancelada'])
             ->where('patient_id', auth()->id());
-        return view('appointments.index', compact('confirmedAppointments', 'pendingAppointments', 'oldAppointments'));
+                }
+
+        
+        return view('appointments.index', 
+        compact('confirmedAppointments', 'pendingAppointments', 'oldAppointments', 'role'));
     
     }
 
@@ -110,6 +142,48 @@ class AppointmentController extends Controller
         Appointment::create($data);
 
         $notification = 'La cita se ha realizado correctamente.';
-        return back()->with(compact('notification'));
+        return redirect('/miscitas')->with(compact('notification'));
     }
+
+    public function cancel(Appointment $appointment, Request $request){
+
+        if($request->has('cancellation')){
+            $cancellation = new CancelledAppointment();
+            $cancellation->justification = $request->input('justification');
+            $cancellation->cancelled_by_id = auth()->id();
+
+            $appointment->cancellation()->save($cancellation);
+        }
+        $appointment->status = 'Cancelada';
+        $appointment->save();
+        $notification = 'La cita se ha cancelado correctamente.';
+
+        return redirect('/miscitas')->with(compact('notification'));
+    }
+
+    public function confirm(Appointment $appointment){
+
+       
+        $appointment->status = 'Confirmada';
+        $appointment->save();
+        $notification = 'La cita se ha confirmado correctamente.';
+
+        return redirect('/miscitas')->with(compact('notification'));
+    }
+
+    public function formCancel(Appointment $appointment){
+        if($appointment->status == 'Confirmada'){
+            $role = auth()->user()->role;
+            return view('appointments.cancel', compact('appointment', 'role'));
+        }
+        return redirect('/miscitas');
+        
+    }
+
+    public function show(Appointment $appointment){
+        $role = auth()->user()->role;
+        return view('appointments.show', compact('appointment', 'role'));
+    }
+
+
 }
